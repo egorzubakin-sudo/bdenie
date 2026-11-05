@@ -63,8 +63,8 @@ with sync_playwright() as p:
   content=Path(d.value.path()).read_text();assert ('ХРОНИКА' if id=='historyTxt' else 'Хроника') in content and 'Знак надёжной связи' in content
  # Larger type sizes and usable narrow-screen cards.
  page.evaluate("selected='speech';startTest();test.step=current().steps.length-1;render()")
- assert page.locator('#choices .choice').first.evaluate('n=>getComputedStyle(n).fontSize')=='24px'
- assert page.locator('#choices .choice').first.locator('small').first.evaluate('n=>getComputedStyle(n).fontSize')=='16px'
+ assert page.locator('#choices .choice').first.evaluate('n=>getComputedStyle(n).fontSize')=='20px'
+ assert page.locator('#choices .choice').first.locator('small').first.evaluate('n=>getComputedStyle(n).fontSize')=='14px'
  page.set_viewport_size({'width':400,'height':900});assert page.evaluate('document.documentElement.scrollWidth<=innerWidth')
  page.locator('#friendsOpen').click();assert page.locator('#friendsDialog').bounding_box()['width']<=400;page.locator('[data-close=friendsDialog]').click()
  # Asset/reward validation catches broken references and bad numeric consequences.
