@@ -28,8 +28,9 @@ with sync_playwright() as p:
  sc=step.locator('.crop-controls');sc.locator('summary').click();sc.locator('[data-frame=x]').fill('80')
  assert page.evaluate('editing().backgroundFrame.x')==25
  assert page.evaluate('editing().steps[0].backgroundFrame.x')==80
- assert page.locator('#bg').evaluate('(n)=>n.style.objectPosition')=='80% 75%'
- sc.get_by_text('Наследовать кадр сцены',exact=True).click();assert page.locator('#bg').evaluate('(n)=>n.style.objectPosition')=='25% 75%'
+ assert page.locator('#passageBg').evaluate('(n)=>n.style.objectPosition')=='80% 50%'
+ assert page.locator('#bg').evaluate('(n)=>n.style.objectPosition')=='25% 75%'
+ sc.get_by_text('Сбросить кадрирование',exact=True).click();assert page.locator('#bg').evaluate('(n)=>n.style.objectPosition')=='25% 75%'
  # Preserve on reload and old v2 migration, invalid import rejected.
  page.reload();assert page.evaluate("project.scenes.find(s=>s.id==='bio_watch').backgroundFrame.zoom")==1.5
  assert page.evaluate("(()=>{const p=clone(project);p.version=2;delete p.scenes[0].choices[0].hint;const q=migrate(p);validate(q);return q.version===4&&q.scenes[0].choices[0].hint.length>0})()")
