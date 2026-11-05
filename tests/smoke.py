@@ -3,7 +3,7 @@ from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox']);page=b.new_page(viewport={'width':1440,'height':1000});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto('http://127.0.0.1:8000/index.html');page.evaluate('localStorage.clear()');page.reload();page.evaluate('validate(project)')
- assert page.evaluate('project.version')==4
+ assert page.evaluate('project.version')==5
  page.locator('#cadetName').fill('Алексей');page.get_by_text('Начать историю →',exact=True).click();assert page.locator('#titleView').inner_text()=='Вступление'
  # Finish authored introduction.
  while page.get_by_text('Далее →',exact=True).count():page.get_by_text('Далее →',exact=True).click()
