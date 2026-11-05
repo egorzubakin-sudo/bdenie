@@ -4,16 +4,16 @@ from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox']);page=b.new_page(viewport={'width':1440,'height':1000});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto('http://127.0.0.1:8000/index.html');page.evaluate('localStorage.clear()');page.reload()
- assert page.evaluate('project.version')==5
- page.evaluate('validate(project)');assert page.evaluate('project.scenes.filter(s=>s.course===2).length')==11
+ assert page.evaluate('project.version')==6
+ page.evaluate('validate(project)');assert page.evaluate('project.scenes.filter(s=>s.course===2).length')==17
  # Old edition migration preserves author edits/assets and only fills missing practice awards.
- prev=page.evaluate('clone(project)');prev['version']=4;prev.pop('edition5',None);prev['scenes']=[sc for sc in prev['scenes'] if sc.get('course')!=2]
+ prev=page.evaluate('clone(project)');prev['version']=4;prev.pop('edition5',None);prev.pop('edition6',None);prev['scenes']=[sc for sc in prev['scenes'] if sc.get('course')!=2]
  for sc in prev['scenes']:
   if sc['id']=='__ending':sc['choices']=[]
   for c in sc['choices']:
    if c.pop('practice5',False):c.get('effect',{}).pop('stats',None)
  result=page.evaluate("""p=>{p.scenes.find(s=>s.id==='speech').title='Авторская речь';p.scenes.find(s=>s.id==='tenth').choices[0].effect.stats={combat:3};const q=migrate(p);validate(q);return{title:q.scenes.find(s=>s.id==='speech').title,skill:q.scenes.find(s=>s.id==='tenth').choices[0].effect.stats.combat,year2:q.scenes.filter(s=>s.course===2).length,background:q.scenes.find(s=>s.id==='speech').background,version:q.version}}""",prev)
- assert result['title']=='Авторская речь' and result['skill']==3 and result['year2']==11 and result['version']==5
+ assert result['title']=='Авторская речь' and result['skill']==3 and result['year2']==17 and result['version']==6
  assert result['background']==next(sc for sc in prev['scenes'] if sc['id']=='speech').get('background')
  assert page.evaluate("(()=>{const p=clone(project);p.scenes=p.scenes.filter(s=>s.id!=='y2_workshop');return !migrate(p).scenes.some(s=>s.id==='y2_workshop')})()")
  page.locator('#cadetName').fill('Старший курсант');page.get_by_text('Начать историю →',exact=True).click()
@@ -35,7 +35,7 @@ with sync_playwright() as p:
  assert page.evaluate('musicEngine.timer===null')
  page.locator('#musicToggle').click();page.wait_for_function('musicEngine.playing');page.locator('#musicToggle').click()
  # Reduced motion removes animation while keeping choices fully usable.
- page.evaluate("test={...fresh(),playerName:'Тест',nameConfirmed:true,scene:'speech',step:0};render()")
+ page.evaluate("test={...fresh(),playerName:'Тест',nameConfirmed:true,scene:'speech',step:project.scenes.find(s=>s.id==='speech').steps.length-1};render()")
  page.emulate_media(reduced_motion='reduce');assert page.locator('#choices .choice').first.evaluate('n=>getComputedStyle(n).transitionDuration')=='0s'
  page.emulate_media(reduced_motion='no-preference')
  # Peaceful practice is awarded once; replay returns it to baseline.
@@ -48,7 +48,7 @@ with sync_playwright() as p:
   assert page.evaluate('current().special')=='ending';page.locator('#choices .choice').first.click();page.get_by_text('Продолжить →',exact=True).click()
   visited=[];guard=0
   while page.evaluate('current().special')!='graduation' or page.get_by_text('Далее →',exact=True).count():
-   guard+=1;assert guard<80
+   guard+=1;assert guard<160
    if page.get_by_text('Далее →',exact=True).count():page.get_by_text('Далее →',exact=True).click();continue
    id=page.evaluate('test.scene');visited.append(id)
    if id=='y2_clubs':idx=route
@@ -64,12 +64,12 @@ with sync_playwright() as p:
   page.locator('#saveMenu summary').click()
   with page.expect_download() as d:page.locator('#dossierExport').click()
   assert 'ИТОГИ ВТОРОГО КУРСА' in Path(d.value.path()).read_text()
-  page.locator('#saveMenu summary').click()
+  page.evaluate("document.getElementById('saveMenu').open=false")
  assert page.evaluate('game.scene')==page.evaluate('project.startScene')
  report=page.evaluate('sequenceAudit(project)');assert not any('Нет пути к завершению' in t for t in report['warnings'])
  # Mobile writing dialog fits the viewport and keeps Apply reachable.
  page.set_viewport_size({'width':500,'height':900});page.locator('#step-editor-0').get_by_text('Развернуть текст',exact=True).first.click();assert page.locator('#writerApply').is_visible();assert page.evaluate('document.documentElement.scrollWidth<=innerWidth');page.locator('#writerCancel').click()
  assert not errors,errors
  page.set_viewport_size({'width':1440,'height':1000});page.screenshot(path='/workspace/bdenie/version5-preview.png',full_page=True)
- print('PASS: safe 4→5 migration; 11 social scenes; draft/apply/undo text editor and mobile; local music on/off/volume; reduced-motion animation; peaceful skill/replay; both second-year routes to graduation, relationship flags, stats and dossier export')
+ print('PASS: compatible migration; extended second year; draft/apply/undo text editor and mobile; local music on/off/volume; reduced-motion animation; peaceful skill/replay; both second-year routes to graduation, relationship flags, stats and dossier export')
  b.close()

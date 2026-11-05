@@ -4,7 +4,7 @@ from playwright.sync_api import sync_playwright
 with sync_playwright() as p:
  b=p.chromium.launch(headless=True,executable_path='/usr/bin/chromium',args=['--no-sandbox']);page=b.new_page(viewport={'width':1440,'height':1000});errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
  page.goto('http://127.0.0.1:8000/index.html');page.evaluate('localStorage.clear()');page.reload()
- assert page.evaluate('project.version')==5
+ assert page.evaluate('project.version')==6
  page.evaluate("game.scene='bio_watch';game.playerName='Тест';game.nameConfirmed=true;selected='bio_watch';editor();render()")
  assert 'Древняя столица Бдения' in page.locator('#choices .choice').first.inner_text()
  cards=page.locator('.answer-card');assert cards.count()==10
@@ -33,7 +33,7 @@ with sync_playwright() as p:
  sc.get_by_text('Сбросить кадрирование',exact=True).click();assert page.locator('#bg').evaluate('(n)=>n.style.objectPosition')=='25% 75%'
  # Preserve on reload and old v2 migration, invalid import rejected.
  page.reload();assert page.evaluate("project.scenes.find(s=>s.id==='bio_watch').backgroundFrame.zoom")==1.5
- assert page.evaluate("(()=>{const p=clone(project);p.version=2;delete p.scenes[0].choices[0].hint;const q=migrate(p);validate(q);return q.version===5&&q.scenes[0].choices[0].hint.length>0})()")
+ assert page.evaluate("(()=>{const p=clone(project);p.version=2;delete p.scenes[0].choices[0].hint;const q=migrate(p);validate(q);return q.version===6&&q.scenes[0].choices[0].hint.length>0})()")
  assert page.evaluate("(()=>{const p=clone(project);p.scenes[0].backgroundFrame.zoom=10;try{validate(p);return false}catch(e){return true}})()")
  page.get_by_text('Карта сцен и реплик',exact=True).click();page.locator('#mapSearch').fill('Город воды и мастеров');assert page.locator('.search-match').count()==1
  assert 'Найдено: 1' in page.locator('#mapSearchCount').inner_text()
@@ -43,7 +43,7 @@ with sync_playwright() as p:
  page.locator('#storyMap .node[aria-label="Чёрная Башня"]').first.click();assert page.locator('#answer-editor-0').evaluate('(n)=>n.open')
  page.evaluate("document.getElementById('saveMenu').open=true")
  with page.expect_download() as d:page.locator('#export').click()
- data=json.load(open(d.value.path()));assert data['version']==5 and data['scenes'][0]['backgroundFrame']['x']==25
+ data=json.load(open(d.value.path()));assert data['version']==6 and data['scenes'][0]['backgroundFrame']['x']==25
  page.locator('#closeMap').click();page.screenshot(path='/workspace/bdenie/preview.png',full_page=True)
  assert not errors,errors
  print('PASS: descriptions, preserved hints, collapsed cards, reorder, duplicate, undo, scene crop, step override/inheritance, persistence, v2 migration, frame validation, map search and keyboard navigation, card navigation, export')
